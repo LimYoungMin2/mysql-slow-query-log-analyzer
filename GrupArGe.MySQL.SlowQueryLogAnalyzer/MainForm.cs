@@ -15,6 +15,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
   {
     string logFilePath = @"C:\WORKS\slow.log";
     string _NL = Environment.NewLine;
+    CultureInfo _culture = new CultureInfo("en-US");
 
     public MainForm()
     {
@@ -22,8 +23,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
     }
 
     private void MainForm_Load(object sender, EventArgs e)
-    {
-      
+    {      
       openFileDialog1.Filter = "log files (*.log)|*.log|All files (*.*)|*.*";
     }
 
@@ -38,6 +38,8 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
     public void AnalyzeLogFile(string filePath)
     {
       _txtDebug.Clear();
+      _txtDebug.AppendText("Analyzing...");
+      _txtDebug.Update();
 
       List<LogRecord> records = new List<LogRecord>();
       
@@ -53,7 +55,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
 
           while ((line = reader.ReadLine()) != null)
           {
-            if (queryLinesProcessed && line[0] == '#') // yeni bir kayıt başlıyor
+            if (queryLinesProcessed && line[0] == '#') // new record starting
             {
               if (recordHasTimeValue == false)
               {
@@ -66,7 +68,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
               recordHasTimeValue = false;
             }
 
-            // # Time etiketi her kayıtta gelmiyor
+            // # Time line does not exist in every record
             if (line.Contains("# Time"))
             {
               recordHasTimeValue = true;
@@ -92,9 +94,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
             if (line[0] != '#')
             {
               queryLinesProcessed = true;
-            }
-
-            
+            }            
           }
           
           records.Add(record);
@@ -120,12 +120,19 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
         recordCountMsg = String.Format("{0} Records Found!", records.Count);
       }
 
-      _txtDebug.AppendText(recordCountMsg + _NL + _NL);
-
+      StringBuilder sb = new StringBuilder();
+      //_txtDebug.AppendText(recordCountMsg + _NL + _NL);
+      sb.Append(recordCountMsg);
+      sb.AppendLine();
+      sb.AppendLine();
+      
       foreach (var record in records)
       {
-        _txtDebug.AppendText(record.ToString());
+        sb.Append(record.ToString());
+        //_txtDebug.AppendText(record.ToString());
       }
+
+      _txtDebug.Text = sb.ToString();
     }
 
     private long ParseRowsExamined(string line)
@@ -142,7 +149,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
       return Int64.Parse(splitted[6]);
     }
 
-    CultureInfo _culture = new CultureInfo("en-US");
+    
 
     private TimeSpan ParseQueryTime(string line)
     {
@@ -180,7 +187,7 @@ namespace GrupArGe.MySQL.SlowQueryLogAnalyzer
         string search = "Time:";
         int startIndex = line.IndexOf(search) + search.Length;
         dateTimeString = line.Substring(startIndex).Trim().Replace("  ", " 0");
-        dt = DateTime.ParseExact(dateTimeString, "yyMMdd HH:mm:ss", new CultureInfo("en-US"));
+        dt = DateTime.ParseExact(dateTimeString, "yyMMdd HH:mm:ss", _culture);
       }
       catch(Exception exc)
       {
